@@ -19,28 +19,40 @@ class Agent:
     batchSize = 10000
     tupleSum = 0
     epsilon = 0.05;
-    tuples = []
-    value = []
-    learningRate = 0.3
-    discount = 0.9
+    tuples = np.zeros((100000,10))
+    value = np.zeros((100000,6))
+    learningRate = 0.05
+    discount = 0.4
+    tupleSum = 0
     
-    def _init_(self,randomLimit = 1000):
+    def __init__(self,randomLimit = 1000):
         self.randomLimit = randomLimit
         
     def generatingTuples(self):
-        for i_episode in range(100):
-            observation = env.reset()
-            for t in range(10000000000):
+        for i_episode in range(30):
+            previousObservation = env.reset()
+            for t in range(20):
                 if (t >= 1):
                     previousObservation = observation
-                action = self.TakeAction(observation)
+                action = self.TakeAction(previousObservation)
                 observation, reward, done, info = env.step(action)
-                currentState = np.concatenate((previousObservation,action,reward,observation),axis = 0)
-                self.tuples = np.concatenate((self.tuples,currentState),axis = 1)
+                currentTuple = np.concatenate((previousObservation,[action],[reward],observation),axis = 0)
+                currentState = np.concatenate((previousObservation,[action],[0]),axis = 0)
+                self.tuples[self.tupleSum] = currentTuple
+                self.value[self.tupleSum] = currentState
+                self.tupleSum = self.tupleSum + 1
                 print("Observation is %s, reward is %s, action is %s" %(observation,reward,action))
                 if done:
-                    self.tupleSum += (t+1)
+                    for k in range(2):
+                        currentTuple = np.concatenate((observation,[k],[reward],[999,999,999,999]),axis = 0)
+                        currentState = np.concatenate((observation,[k],[-1]),axis = 0)
+                        self.tuples[self.tupleSum] = currentTuple
+                        self.value[self.tupleSum] = currentState
+                        self.tupleSum = self.tupleSum + 1
                     break
+#        print(self.value)
+        train = self.value[0:self.tupleSum,0:5]
+        self.nbrs = NearestNeighbors(n_neighbors=3).fit(train)
                 
     # action is -1 or 1, if tuple size is less than randomLimit, take random action
     # Otherwise, take the action computed by KNN
@@ -54,29 +66,49 @@ class Agent:
             if(rightForceValue > leftForceValue):
                 return 1
             else:
-                return -1
+                return 0
             
     # Q learning to compute the optimal control policy
     def ValueIteration(self):
-        self.value = np.zeros((self.tuples.shape(0), 6))
+        count = 0
+        print("Value Iteration")
         while True:
-            new_value = np.zeros(self.value.shape)
-            for ind in range(self.tuples.shape(0)):
-                tdError = self.tuples[ind,5]+self.discount*max(self.KNNApprox(self.tuples[ind,6:9],-1),self.KNNApprox(self.tuples[ind,6:9],1))-self.value[ind,5]
-                new_value[ind,5] = self.value[ind,5] + self.learningRate*(tdError)
-            
-            
-            if np.sum(np.abs(self.value - new_value)) < 1e-1:
+            if count >=1:
+                self.value = self.new_value;
+            self.new_value = np.zeros(self.value.shape)
+            self.new_value[:,0:5] = self.value[:,0:5]
+            for ind in range(self.tupleSum):
+                count += 1
+                print(count)
+                if(self.tuples[ind,6]!= 999):
+                    tdError = self.tuples[ind,5]+self.discount*max(self.KNNApprox(self.tuples[ind,6:10],0),self.KNNApprox(self.tuples[ind,6:10],1))-self.value[ind,5]
+                    self.new_value[ind,5] = self.value[ind,5] + self.learningRate*(tdError)
+#                    print(self.new_value[ind,5])
+#            if count >= 150000:
+#                self.value = self.new_value
+#                break;
+            if np.sum(np.abs(self.value - self.new_value)) < 1e-1:
                 print('Value function converges')
+                self.value = self.new_value
                 break            
                 
                 
     def KNNApprox(self,state,action):
-        train = self.value[:,0:4]
-        nbrs = NearestNeighbors(n_neighbors=3).fit(train)
-        _,indices = nbrs.kneighbors(np.concatenate(state,action,axis = 0))
-        
+#        print(np.concatenate((state,[action])))
+        temp,indices = self.nbrs.kneighbors(np.concatenate((state,[action]),axis = 0).reshape(1,5))
+#        print(np.mean(self.value[indices,5]))
         return np.mean(self.value[indices,5]);
             
+    
+    
+
+if __name__ == '__main__':
+    agent = Agent()
+    agent.generatingTuples()
+
+    tuples = agent.tuples
+    agent.ValueIteration()
+    values = agent.value
+
             
         
