@@ -69,23 +69,25 @@ def FindBestDistanceWeights():
     ratio = 1.0/interval
     
     for i in range(interval):
-        bestWeight[4] = i*ratio
+        weight[4] = i*ratio
         for j in range(interval):
             weight[0] = (j*ratio)/2
             weight[2] = (j*ratio)/2
             weight[1] = (1-j*ratio)/2
             weight[3] = (1-j*ratio)/2
-            agent = Agent(randomLimit=50,weight=bestWeight)
+            agent = Agent(randomLimit=50,weight=weight)
             score = agent.PlayGameNTimes(9)
             if(score > bestScore):
                 bestScore = score
                 bestWeight = weight
     
     print("The best weight is:")
-    print(weight)
+    print(bestWeight)
         
         
         
         
 if __name__ == '__main__':
-    FindBestDistanceWeights()
+    agent = Agent(randomLimit = 100)
+    agent.PlayGameNTimes(8)
+    agent.Play()

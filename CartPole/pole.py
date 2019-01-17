@@ -21,10 +21,10 @@ class Agent:
     epsilon = 0.1;
 
     learningRate = 0.05
-    discount = 0.7
+    discount = 0.8
     tupleSum = 0
     
-    def __init__(self,randomLimit = 1000,k = 6,weight = [1,1,1,1,1]):
+    def __init__(self,randomLimit = 1000,k = 6,weight = [0.4,0.1,0.4,0.1,0.8]):
         self.randomLimit = randomLimit
         self.k = k
         self.tuples = np.zeros((100000,10))
@@ -35,6 +35,18 @@ class Agent:
     
     def mydist(self,x,y):
         return np.sum(np.dot((x-y)**2,self.weight))
+    
+    def Play(self):
+        previousObservation = env.reset()        
+        for t in range(300):
+            if (t >= 1):
+                previousObservation = observation
+            env.render()
+            action = self.TakeAction(previousObservation)            
+            observation, reward, done, info = env.step(action)
+            if done:
+                print("Episode finished after {} timesteps".format(t+1))
+                break
     
     def generatingTuples(self):
         rounds = 0
@@ -64,7 +76,7 @@ class Agent:
         train = self.value[0:self.tupleSum,0:5]
         self.scaler = preprocessing.StandardScaler().fit(train)
         train = self.scaler.transform(train)
-        self.nbrs = NearestNeighbors(n_neighbors=self.k,metric=self.mydist).fit(train)
+        self.nbrs = NearestNeighbors(n_neighbors=self.k).fit(train)
         return rounds
     
                 
@@ -95,7 +107,7 @@ class Agent:
                 count += 1
 #                print(count)
                 if(self.tuples[ind,6]!= 999):
-                    tdError = self.tuples[ind,5]+self.discount*max(self.KNNApprox(self.tuples[ind,6:10],0),self.KNNApprox(self.tuples[ind,6:10],1))-self.value[ind,5]
+                    tdError = 1+self.discount*max(self.KNNApprox(self.tuples[ind,6:10],0),self.KNNApprox(self.tuples[ind,6:10],1))-self.value[ind,5]
                     self.new_value[ind,5] = self.value[ind,5] + self.learningRate*(tdError)
 #                    print(self.new_value[ind,5])
 #            if count >= 150000:
