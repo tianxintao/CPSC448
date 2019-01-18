@@ -89,5 +89,5 @@ def FindBestDistanceWeights():
         
 if __name__ == '__main__':
     agent = Agent(randomLimit = 100)
-    agent.PlayGameNTimes(8)
-    agent.Play()
+    agent.LoadPolicy()
+    agent.tupleSum = 8411

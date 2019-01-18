@@ -7,6 +7,7 @@ This is a temporary script file.
 
 import gym
 import numpy as np
+import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn import preprocessing
 
@@ -38,7 +39,7 @@ class Agent:
     
     def Play(self):
         previousObservation = env.reset()        
-        for t in range(300):
+        for t in range(500):
             if (t >= 1):
                 previousObservation = observation
             env.render()
@@ -48,9 +49,9 @@ class Agent:
                 print("Episode finished after {} timesteps".format(t+1))
                 break
     
-    def generatingTuples(self):
+    def generatingTuples(self,episodes):
         rounds = 0
-        for i_episode in range(2):
+        for i_episode in range(episodes):
             previousObservation = env.reset()
             for t in range(5000):
                 if (t >= 1):
@@ -127,15 +128,32 @@ class Agent:
     
     
     
-    def PlayGameNTimes(self,n):
+    def PlayGameNTimes(self,n,rounds = 2):
         totalRounds = 0
         for j in range(n):
-            rounds = self.generatingTuples()
+            rounds = self.generatingTuples(rounds)
             if j <= 15:
                 self.ValueIteration()
             totalRounds = totalRounds + rounds
         
         return totalRounds
+    
+    def SaveData(self):
+        df = pd.DataFrame(self.value)
+        df.to_csv("ActionValues.csv",index = False)
+        df = pd.DataFrame(self.tuples)
+        df.to_csv("Tuples.csv",index = False)
+        
+        
+    def LoadPolicy(self):
+        self.value = np.array(pd.read_csv("ActionValues.csv"))
+        self.tuples = np.array(pd.read_csv("Tuples.csv"))
+        self.tupleSum = 10000
+        
+        train = self.value[0:self.tupleSum,0:5]
+        self.scaler = preprocessing.StandardScaler().fit(train)
+        train = self.scaler.transform(train)
+        self.nbrs = NearestNeighbors(n_neighbors=self.k).fit(train)
 
             
     
