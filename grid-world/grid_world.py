@@ -17,17 +17,17 @@ import os
 
 
 class GridWorld:
-    
+
     A_PRIME_POS = [4, 1]
     B_PRIME_POS = [2, 3]
-    
+
     # left, up, right, down
     ACTIONS = [np.array([0, -1]),
                np.array([-1, 0]),
                np.array([0, 1]),
                np.array([1, 0])]
     ACTION_PROB = 0.25
-    
+
     def __init__(self,DISCOUNT = 0.9,WORLD_SIZE = 5, A_POS = [0,1],B_POS = [0,3], showAllGraph = False, outProb = 0.25):
         self.WORLD_SIZE = WORLD_SIZE
         self.DISCOUNT = DISCOUNT
@@ -63,27 +63,27 @@ class GridWorld:
         fig, ax = plt.subplots()
         ax.set_axis_off()
         tb = Table(ax, bbox=[0, 0, 1, 1])
-    
+
         nrows, ncols = image.shape
         width, height = 1.0 / ncols, 1.0 / nrows
-    
+
         # Add cells
         for (i,j), val in np.ndenumerate(image):
             # Index either the first or second item of bkg_colors based on
             # a checker board pattern
             idx = [j % 2, (j + 1) % 2][i % 2]
             color = 'white'
-    
-            tb.add_cell(i, j, width, height, text=val, 
+
+            tb.add_cell(i, j, width, height, text=val,
                         loc='center', facecolor=color)
-    
+
         # Row Labels...
         for i, label in enumerate(range(len(image))):
-            tb.add_cell(i, -1, width, height, text=label+1, loc='right', 
+            tb.add_cell(i, -1, width, height, text=label+1, loc='right',
                         edgecolor='none', facecolor='none')
         # Column Labels...
         for j, label in enumerate(range(len(image))):
-            tb.add_cell(-1, j, width, height/2, text=label+1, loc='center', 
+            tb.add_cell(-1, j, width, height/2, text=label+1, loc='center',
                                edgecolor='none', facecolor='none')
         ax.add_table(tb)
 
@@ -100,14 +100,14 @@ class GridWorld:
                         (next_i, next_j), reward, prob = self.step([i, j], action)
                         # bellman equation
                         new_value[i, j] += prob * (reward + self.DISCOUNT * value[next_i, next_j])
-            
+
             if(self.showAllGraph):
                 self.draw_image(np.round(new_value, decimals=2))
                 filename = 'figure_1_' + str(k)+'.png'
                 path = os.path.join('.', 'images', filename)
                 plt.savefig(path)
                 plt.show()
-            
+
             if np.sum(np.abs(value - new_value)) < 1e-1:
                 self.draw_image(np.round(new_value, decimals=2))
                 plt.show()
@@ -116,7 +116,7 @@ class GridWorld:
                 break
 
             value = new_value
-    
+
     def OptimalValueUpdate(self):
         value = np.zeros((self.WORLD_SIZE, self.WORLD_SIZE))
         k = 0
@@ -126,10 +126,10 @@ class GridWorld:
             new_value = np.zeros(value.shape)
             for i in range(0, self.WORLD_SIZE):
                 for j in range(0, self.WORLD_SIZE):
-                    
+
                     values = []
                     for action in self.ACTIONS:
-                        (next_i, next_j), reward = self.step([i, j], action)
+                        (next_i, next_j), reward, prob = self.step([i, j], action)
                         # value iteration
                         values.append(reward + self.DISCOUNT * value[next_i, next_j])
                     new_value[i, j] = np.max(values)
